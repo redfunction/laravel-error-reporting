@@ -1,0 +1,205 @@
+<?php
+
+namespace ErrorReporting\Exceptions;
+use ErrorReporting\Exceptions\Traits\DoNotReportToEmail;
+use ErrorReporting\Interfaces\IReportException;
+use Exception;
+use Illuminate\Contracts\Container\Container;
+use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Http\Exception\HttpResponseException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+
+/**
+ * Class ExceptionReportHandler
+ *
+ * @package ErrorReporting\Exceptions
+ */
+class ExceptionReportHandler extends Handler
+{
+    /**
+     * A list of the exception types that should not be reported.
+     *
+     * @var array
+     */
+    protected $dontReport = [];
+
+    /**
+     * E-mail from address
+     *
+     * @var string
+     */
+    protected $emailFrom;
+
+    /**
+     * E-mail from name
+     *
+     * @var string
+     */
+    protected $emailFromName;
+
+    /**
+     * E-mail Recipients
+     *
+     * @var array(string)
+     */
+    protected $emailRecipients;
+
+    /**
+     * E-mail subject
+     *
+     * @var string
+     */
+    protected $emailSubject;
+
+
+
+    public function __construct(Container $container)
+    {
+        parent::__construct($container);
+        $config = config('error.reporting');
+        if($config != null){
+            $this->dontReport = $config['doNotReport'];
+            $this->emailFrom = $config['emailFrom'];
+            $this->emailFromName = $config['emailFromName'];
+            $this->emailRecipients = $config['emailRecipients'];
+            $this->emailSubject = $config['emailSubject'];
+        }
+    }
+
+    /**
+     * @param Exception $e
+     * @return bool
+     */
+    private function canReport(Exception $e)
+    {
+        foreach ($this->dontReport as $each) {
+            if ($e instanceof $each)
+                return false;
+        }
+        return !$this->objectHasTrait($e, DoNotReportToEmail::class);
+    }
+
+
+    /**
+     * @param object $obj
+     * @param mixed $trait
+     * @return bool
+     */
+    private function objectHasTrait($obj, $trait)
+    {
+        //check arguments
+        $used = class_uses($obj);
+        if (!isset($used[$trait])) {
+            $parents = class_parents($obj);
+            while (!isset($used[$trait]) && $parents) {
+                //get trait used by parents
+                $used = class_uses(array_pop($parents));
+            }
+        }
+        return isset($used[$trait]);//return bool
+    }
+
+    /**
+     * Report or log an exception.
+     *
+     * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
+     *
+     * @param  \Exception $e
+     *
+     * @return void
+     */
+    public function report(Exception $e)
+    {
+        if ($this->canReport($e)) {
+            if($this->emailFrom){
+                $emailSubject = $this->emailSubject;
+                $emailSubject = str_replace("%APP_ENVIRONMENT%", App::environment(), $emailSubject);
+                if (App::offsetExists('mailer')) {
+                    // in case we have xdebug, we don't want it to override var_dump any longer
+                    ini_set('xdebug.overload_var_dump', 0);
+                    Mail::send(
+                        'emails.exception',
+                        ['error' => $e, 'request' => $_REQUEST, 'server' => $_SERVER],
+                        function ($message)
+                        use ($emailSubject) {
+                            $message->from($this->emailFrom, $this->emailFromName);
+                            $message->to($this->emailRecipients)->subject($emailSubject);
+                        }
+                    );
+                }
+            }
+            parent::report($e);
+        }
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @param  \Exception|IReportException $e
+     *
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
+    public function render($request, Exception $e)
+    {
+        $isAjaxException = $request->ajax() || $request->wantsJson();
+        if(in_array(IReportException::class, class_implements($e))){
+            $logMessage = $e->getLogMessage();
+            switch ($e->getLogType()){
+                case 1:
+                    Log::info($logMessage);
+                    break;
+                case 2:
+                    Log::warning($logMessage);
+                    break;
+                case 3:
+                    Log::notice($logMessage);
+                    break;
+                case 4:
+                    Log::error($logMessage);
+                    break;
+            }
+            $redirectPage = $e->getRedirectPage();
+            if($redirectPage != null && !$isAjaxException){
+                return $redirectPage;
+            }
+        }
+        else{
+            Log::error($e->getLogMessage());
+        }
+
+        if ($isAjaxException) {
+            $statusCode = 500;
+            if ($e instanceof HttpExceptionInterface) {
+                $statusCode = $e->getStatusCode();
+            }
+
+            $error = [
+                'status' => false,
+                'http_status_code' => $statusCode,
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage(),
+                'error_class_name' => get_class($e),
+                'long_message' => $e->__toString(),
+            ];
+
+            if ($e instanceof HttpResponseException) {
+                $response = $e->getResponse();
+                if ($response instanceof JsonResponse) {
+                    $data = $response->getData(true);
+                    $error['validation_errors'] = $data;
+                    $statusCode = $response->getStatusCode();
+                }
+            }
+
+            $error['http_status_code'] = $statusCode;
+
+            return response()->json($error, $statusCode);
+        }
+        return parent::render($request, $e);
+    }
+}
