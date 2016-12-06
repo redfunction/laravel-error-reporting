@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\View;
+use Illuminate\View\Engines\PhpEngine;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
@@ -55,6 +57,13 @@ class ExceptionReportHandler extends Handler
      */
     protected $emailSubject;
 
+    /**
+     * E-mail template
+     *
+     * @var string
+     */
+    protected $emailTemplate;
+
 
 
     public function __construct(Container $container)
@@ -67,6 +76,7 @@ class ExceptionReportHandler extends Handler
             $this->emailFromName = $config['emailFromName'];
             $this->emailRecipients = $config['emailRecipients'];
             $this->emailSubject = $config['emailSubject'];
+            $this->emailTemplate = $config['emailTemplate'];
         }
     }
 
@@ -121,11 +131,8 @@ class ExceptionReportHandler extends Handler
                 if (App::offsetExists('mailer')) {
                     // in case we have xdebug, we don't want it to override var_dump any longer
                     ini_set('xdebug.overload_var_dump', 0);
-                    Mail::send(
-                        'emails.exception',
-                        ['error' => $e, 'request' => $_REQUEST, 'server' => $_SERVER],
-                        function ($message)
-                        use ($emailSubject) {
+                    Mail::raw($this->reportRenderHtml($e, $_REQUEST, $_SERVER), function ($message) use ($emailSubject)
+                        {
                             $message->from($this->emailFrom, $this->emailFromName);
                             $message->to($this->emailRecipients)->subject($emailSubject);
                         }
@@ -134,6 +141,22 @@ class ExceptionReportHandler extends Handler
             }
             parent::report($e);
         }
+    }
+
+    /**
+     * @param Exception $e
+     * @param array $request
+     * @param array $server
+     * @return string
+     */
+    private function reportRenderHtml(Exception $e, $request, $server)
+    {
+        $data = ['error' => $e, 'request' => $request, 'server' => $server];
+        if($this->emailTemplate == ''){
+            $phpEngine = new PhpEngine();
+            return $phpEngine->get(__DIR__ . '/views/emails/exception.blade.php', $data);
+        }
+        return View::make($this->emailTemplate, $data)->render();
     }
 
     /**
@@ -195,9 +218,7 @@ class ExceptionReportHandler extends Handler
                     $statusCode = $response->getStatusCode();
                 }
             }
-
             $error['http_status_code'] = $statusCode;
-
             return response()->json($error, $statusCode);
         }
         return parent::render($request, $e);

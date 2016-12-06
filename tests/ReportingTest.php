@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Testing\TestCase;
 
+
 class ReportingTest extends TestCase{
     /**
      * Creates the application.
@@ -24,7 +25,6 @@ class ReportingTest extends TestCase{
     }
 
     public function testErrorReportingFlow(){
-        $this->call('GET', '/');
-        dd($this);
+
     }
 }

@@ -12,4 +12,5 @@ return array(
     'emailFromName' => env("ERROR_REPORTING_EMAIL_FROM_NAME"),
     'emailRecipients' => explode(';', env("ERROR_REPORTING_EMAIL_RECIPIENTS", "")),
     'emailSubject' => env("ERROR_REPORTING_EMAIL_SUBJECT"),
+    'emailTemplate' => ''
 );
