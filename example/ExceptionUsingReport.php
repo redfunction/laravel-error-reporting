@@ -5,7 +5,7 @@
  * Class ExceptionUsingReport
  *
  */
-class ExceptionUsingReport implements \ErrorReporting\Interfaces\IReportException
+class ExceptionUsingReport extends Exception implements \ErrorReporting\Interfaces\IReportException
 {
 
     /**

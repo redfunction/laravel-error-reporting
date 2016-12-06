@@ -5,7 +5,7 @@
  * Class ExceptionNotUsingReport
  *
  */
-class ExceptionNotUsingReport implements \ErrorReporting\Interfaces\IReportException
+class ExceptionNotUsingReport extends Exception implements \ErrorReporting\Interfaces\IReportException
 {
     use \ErrorReporting\Exceptions\Traits\DoNotReportToEmail;
 
