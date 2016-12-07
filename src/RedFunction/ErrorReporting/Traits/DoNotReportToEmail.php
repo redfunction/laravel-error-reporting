@@ -1,6 +1,6 @@
 <?php
 
-namespace ErrorReporting\Exceptions\Traits;
+namespace RedFunction\ErrorReporting\Traits;
 
 /**
  * Trait HasMemory

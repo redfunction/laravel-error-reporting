@@ -1,8 +1,7 @@
 <?php
 
-namespace ErrorReporting\Exceptions;
-use ErrorReporting\Exceptions\Traits\DoNotReportToEmail;
-use ErrorReporting\Interfaces\IReportException;
+namespace RedFunction\ErrorReporting;
+
 use Exception;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Foundation\Exceptions\Handler;
@@ -13,12 +12,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use Illuminate\View\Engines\PhpEngine;
+use RedFunction\ErrorReporting\Interfaces\IReportException;
+use RedFunction\ErrorReporting\Traits\DoNotReportToEmail;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Class ExceptionReportHandler
  *
- * @package ErrorReporting\Exceptions
+ * @package RedFunction\ErrorReporting
  */
 class ExceptionReportHandler extends Handler
 {
@@ -126,9 +127,9 @@ class ExceptionReportHandler extends Handler
     {
         if ($this->canReport($e)) {
             if($this->emailFrom){
-                $emailSubject = $this->emailSubject;
-                $emailSubject = str_replace("%APP_ENVIRONMENT%", App::environment(), $emailSubject);
                 if (App::offsetExists('mailer')) {
+                    $emailSubject = $this->emailSubject;
+                    $emailSubject = str_replace("%APP_ENVIRONMENT%", App::environment(), $emailSubject);
                     // in case we have xdebug, we don't want it to override var_dump any longer
                     ini_set('xdebug.overload_var_dump', 0);
                     Mail::raw($this->reportRenderHtml($e, $_REQUEST, $_SERVER), function ($message) use ($emailSubject)
@@ -154,7 +155,7 @@ class ExceptionReportHandler extends Handler
         $data = ['error' => $e, 'request' => $request, 'server' => $server];
         if($this->emailTemplate == ''){
             $phpEngine = new PhpEngine();
-            return $phpEngine->get(__DIR__ . '/views/emails/exception.blade.php', $data);
+            return $phpEngine->get(__DIR__ . '/../../../resources/views/emails/exception.blade.php', $data);
         }
         return View::make($this->emailTemplate, $data)->render();
     }
@@ -192,7 +193,7 @@ class ExceptionReportHandler extends Handler
             }
         }
         else{
-            Log::error($e->getLogMessage());
+            Log::error($e->getMessage());
         }
 
         if ($isAjaxException) {

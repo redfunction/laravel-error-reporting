@@ -10,22 +10,18 @@
     "laravel/framework": "5.3.*"
   },
   "require-dev": {
-    "phpunit/phpunit": "~5.0"
+    "phpunit/phpunit": "~5.0",
+    "mockery/mockery": "0.9.*"
   },
   "autoload": {
-    "classmap": [
-
-    ],
-    "psr-4": {
-
-    },
-    "files": [
-
-    ]
+    "psr-0": {
+      "RedFunction\\ErrorReporting": "src/"
+    }
   },
   "autoload-dev": {
     "classmap": [
-
+      "tests/",
+      "examples"
     ]
   },
   "scripts": {

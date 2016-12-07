@@ -15,7 +15,7 @@ ERROR_REPORTING_EMAIL_RECIPIENTS=example.recipients@example.com
 ERROR_REPORTING_EMAIL_SUBJECT=Test %APP_ENVIRONMENT%
 ```
 
-### config error.reporting.php
+### config/error.reporting.php
 ```php
 <?php
 return array(
@@ -37,6 +37,30 @@ return array(
 If you do not want report excpetion class, then you can add class to array doNotReport.
 If you want use custom template, then you have to put emailTemplate value.
 
+### Add to plugin to Laravel
+You can choice
+1) bootstrap/app.php
+2) config/app.php
+
+#### bootstrap/app.php
+You have to add code.
+```php
+$app->singleton(
+    Illuminate\Contracts\Debug\ExceptionHandler::class,
+    RedFunction\ErrorReporting\ExceptionReportHandler::class
+);
+```
+
+#### config/app.php
+You have to add `\RedFunction\ErrorReporting\Providers\ExceptionReportProvider::class` to providers.
+```php 
+    'providers' => [
+    ...
+    \RedFunction\ErrorReporting\Providers\ExceptionReportProvider::class,
+    ...
+    ]
+```
+
 ## Example code
 
 ### Report is working
@@ -50,7 +74,7 @@ Report can call methods (getLogMessage, getLogType, getRedirectPage)
  * Class ExceptionUsingReport
  *
  */
-class ExceptionUsingReport extends Exception implements \ErrorReporting\Interfaces\IReportException
+class ExceptionUsingReport extends Exception implements RedFunction\ErrorReporting\Interfaces\IReportException
 {
 
     /**
@@ -92,9 +116,9 @@ You have to add trait `\ErrorReporting\Exceptions\Traits\DoNotReportToEmail`
  * Class ExceptionNotUsingReport
  *
  */
-class ExceptionNotUsingReport extends Exception implements \ErrorReporting\Interfaces\IReportException
+class ExceptionNotUsingReport extends Exception implements RedFunction\ErrorReporting\Interfaces\IReportException
 {
-    use \ErrorReporting\Exceptions\Traits\DoNotReportToEmail;
+    use RedFunction\ErrorReporting\Traits\DoNotReportToEmail;
 
     /**
      * @return string

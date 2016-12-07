@@ -1,11 +1,11 @@
 <?php
 
-namespace ErrorReporting\Interfaces;
+namespace RedFunction\ErrorReporting\Interfaces;
 
 /**
  * Interface IRaportException
  *
- * @package ErrorReporting\Interfaces
+ * @package RedFunction\ErrorReporting\Interfaces
  */
 interface IReportException
 {

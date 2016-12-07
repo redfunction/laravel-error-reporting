@@ -1,13 +1,16 @@
 <?php
+namespace RedFunction\ErrorReporting\Examples;
+
+use Exception;
+use RedFunction\ErrorReporting\Interfaces\IReportException;
 
 
 /**
- * Class ExceptionNotUsingReport
+ * Class ExceptionUsingReport
  *
  */
-class ExceptionNotUsingReport extends Exception implements \ErrorReporting\Interfaces\IReportException
+class ExceptionUsingReport extends Exception implements IReportException
 {
-    use \ErrorReporting\Exceptions\Traits\DoNotReportToEmail;
 
     /**
      * @return string
