@@ -1,10 +1,17 @@
 {
-  "name": "laravel/error-reporting",
+  "name": "redfunction/laravel-error-reporting",
   "description": "Laravel Error reporting",
-  "keywords": [
+  "keywords": ["exception", "error", "report"],
+  "homepage": "https://github.com/redfunction/laravel-error-reporting",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Johannes Tamm",
+      "email": "johannes.tamm@redfunction.ee",
+      "role": "Developer"
+    }
   ],
-  "license": "proprietary",
-  "type": "project",
+  "type": "library",
   "require": {
     "php": ">=5.6.4",
     "laravel/framework": "5.3.*"
@@ -24,11 +31,6 @@
       "examples"
     ]
   },
-  "scripts": {
-
-  },
-  "repositories": [
-  ],
   "config": {
     "preferred-install": "dist"
   },
