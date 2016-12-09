@@ -66,12 +66,11 @@ class ExceptionReportHandler extends Handler
     protected $emailTemplate;
 
 
-
     public function __construct(Container $container)
     {
         parent::__construct($container);
         $config = config('error.reporting');
-        if($config != null){
+        if ($config != null) {
             $this->dontReport = $config['doNotReport'];
             $this->emailFrom = $config['emailFrom'];
             $this->emailFromName = $config['emailFromName'];
@@ -126,17 +125,17 @@ class ExceptionReportHandler extends Handler
     public function report(Exception $e)
     {
         if ($this->canReport($e)) {
-            if($this->emailFrom){
+            if ($this->emailFrom) {
                 if (App::offsetExists('mailer')) {
                     $emailSubject = $this->emailSubject;
                     $emailSubject = str_replace("%APP_ENVIRONMENT%", App::environment(), $emailSubject);
                     // in case we have xdebug, we don't want it to override var_dump any longer
                     ini_set('xdebug.overload_var_dump', 0);
-                    Mail::raw($this->reportRenderHtml($e, $_REQUEST, $_SERVER), function ($message) use ($emailSubject)
-                        {
-                            $message->from($this->emailFrom, $this->emailFromName);
-                            $message->to($this->emailRecipients)->subject($emailSubject);
-                        }
+                    Mail::raw('', function ($message) use ($e, $emailSubject) {
+                        $message->from($this->emailFrom, $this->emailFromName);
+                        $message->setBody($this->reportRenderHtml($e, $_REQUEST, $_SERVER), 'text/html');
+                        $message->to($this->emailRecipients)->subject($emailSubject);
+                    }
                     );
                 }
             }
@@ -153,7 +152,7 @@ class ExceptionReportHandler extends Handler
     private function reportRenderHtml(Exception $e, $request, $server)
     {
         $data = ['error' => $e, 'request' => $request, 'server' => $server];
-        if($this->emailTemplate == ''){
+        if ($this->emailTemplate == '') {
             $phpEngine = new PhpEngine();
             return $phpEngine->get(__DIR__ . '/../../../resources/views/emails/exception.blade.php', $data);
         }
@@ -171,9 +170,9 @@ class ExceptionReportHandler extends Handler
     public function render($request, Exception $e)
     {
         $isAjaxException = $request->ajax() || $request->wantsJson();
-        if(in_array(IReportException::class, class_implements($e))){
+        if (in_array(IReportException::class, class_implements($e))) {
             $logMessage = $e->getLogMessage();
-            switch ($e->getLogType()){
+            switch ($e->getLogType()) {
                 case 1:
                     Log::info($logMessage);
                     break;
@@ -188,11 +187,10 @@ class ExceptionReportHandler extends Handler
                     break;
             }
             $redirectPage = $e->getRedirectPage();
-            if($redirectPage != null && !$isAjaxException){
+            if ($redirectPage != null && !$isAjaxException) {
                 return $redirectPage;
             }
-        }
-        else{
+        } else {
             Log::error($e->getMessage());
         }
 

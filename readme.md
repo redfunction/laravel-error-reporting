@@ -3,8 +3,22 @@
 ## Install
 
 ### composer
+#### Direct download
 ```bash
-composer require ...
+composer require redfunction/laravel-error-reporting
+```
+
+#### composer.json
+```json
+{
+    "require": {
+      "redfunction/laravel-error-reporting" : "*"
+    }
+}
+```
+
+```bash
+composer update
 ```
 
 ### ENV (config)
