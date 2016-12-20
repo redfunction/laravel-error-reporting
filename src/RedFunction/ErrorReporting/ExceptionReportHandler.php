@@ -66,7 +66,7 @@ class ExceptionReportHandler extends Handler
     protected $emailTemplate;
 
 
-    public function __construct($container)
+    public function __construct(Container $container)
     {
         parent::__construct($container);
         $config = config('error.reporting');
