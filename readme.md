@@ -24,9 +24,9 @@ composer update
 ### ENV (config)
 ```env
 ERROR_REPORTING_EMAIL_FROM=example@example.com
-ERROR_REPORTING_EMAIL_FROM_NAME=Example name
+ERROR_REPORTING_EMAIL_FROM_NAME="Example name"
 ERROR_REPORTING_EMAIL_RECIPIENTS=example.recipients@example.com
-ERROR_REPORTING_EMAIL_SUBJECT=Test %APP_ENVIRONMENT%
+ERROR_REPORTING_EMAIL_SUBJECT="Test %APP_ENVIRONMENT%"
 ```
 
 ### config/error.reporting.php
@@ -160,6 +160,61 @@ class ExceptionNotUsingReport extends Exception implements RedFunction\ErrorRepo
     public function getRedirectPage()
     {
         return null;
+    }
+}
+```
+### Using custom render
+
+#### config error.reporting
+Example code.
+```php
+'customExceptionRender' => [
+        'className' => RedFunction\ErrorReporting\Examples\CustomExceptionRender::class,
+        'usingException' => [
+            RedFunction\ErrorReporting\Examples\ExceptionNotUsingReport::class
+        ]
+    ]
+```
+
+#### Create custom render class
+
+```php
+<?php
+namespace RedFunction\ErrorReporting\Examples;
+use Exception;
+use Illuminate\Http\Response;
+use RedFunction\ErrorReporting\AbstractCustomExceptionRender;
+
+
+/**
+ * Class CustomExceptionRender
+ *
+ */
+class CustomExceptionRender extends AbstractCustomExceptionRender
+{
+    /**
+     * Render an exception into an HTTP response.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @param  Exception $e
+     *
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
+    public function render($request, $e)
+    {
+        //TODO: You can add something, what you want.
+        if ($e instanceof Exception) {
+            $this->log(self::LOG_NOTICE, $e->getMessage());
+            return new Response($e->getMessage(), $e->getCode());
+        }
+        return null;
+    }
+
+    /**
+     * AbstractCustomExceptionRender constructor.
+     */
+    public function __construct()
+    {
     }
 }
 ```

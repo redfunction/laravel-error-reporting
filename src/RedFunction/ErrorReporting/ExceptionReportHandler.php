@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use Illuminate\View\Engines\PhpEngine;
+use RedFunction\ErrorReporting\Interfaces\IOptionReport;
 use RedFunction\ErrorReporting\Interfaces\IReportException;
 use RedFunction\ErrorReporting\Traits\DoNotReportToEmail;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -65,7 +66,25 @@ class ExceptionReportHandler extends Handler
      */
     protected $emailTemplate;
 
+    /**
+     * Custom exception render class
+     *
+     * @var string|null
+     */
+    protected $customExceptionRenderClass = null;
 
+    /**
+     * Custom exception render class
+     *
+     * @var array
+     */
+    protected $customExceptionRenderUsing = [];
+
+
+    /**
+     * ExceptionReportHandler constructor.
+     * @param Container $container
+     */
     public function __construct(Container $container)
     {
         parent::__construct($container);
@@ -77,11 +96,16 @@ class ExceptionReportHandler extends Handler
             $this->emailRecipients = $config['emailRecipients'];
             $this->emailSubject = $config['emailSubject'];
             $this->emailTemplate = $config['emailTemplate'];
+            $customExceptionRender = $config['customExceptionRender'];
+            if($customExceptionRender != null){
+                $this->customExceptionRenderClass = $customExceptionRender['className'];
+                $this->customExceptionRenderUsing = $customExceptionRender['usingException'];
+            }
         }
     }
 
     /**
-     * @param Exception $e
+     * @param \Exception|IOptionReport|Exception $e
      * @return bool
      */
     private function canReport(Exception $e)
@@ -90,6 +114,8 @@ class ExceptionReportHandler extends Handler
             if ($e instanceof $each)
                 return false;
         }
+        if (in_array(IOptionReport::class, class_implements($e)))
+            return $e->canReport();
         return !$this->objectHasTrait($e, DoNotReportToEmail::class);
     }
 
@@ -163,35 +189,32 @@ class ExceptionReportHandler extends Handler
      * Render an exception into an HTTP response.
      *
      * @param  \Illuminate\Http\Request $request
-     * @param  \Exception|IReportException $e
+     * @param  \Exception|IReportException|Exception $e
      *
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function render($request, Exception $e)
     {
+        if($this->customExceptionRenderClass != null){
+            foreach ($this->customExceptionRenderUsing as $exceptionClass){
+                if($e instanceof $exceptionClass){
+                    /** @var AbstractCustomExceptionRender $customExceptionRender */
+                    $customExceptionRender = new $this->customExceptionRenderClass;
+                    $redirect = $customExceptionRender->render($request, $e);
+                    $this->writeLog($customExceptionRender->getLogType(), $customExceptionRender->getLogMessage());
+                    if($redirect != null) return $redirect;
+                }
+            }
+        }
         $isAjaxException = $request->ajax() || $request->wantsJson();
         if (in_array(IReportException::class, class_implements($e))) {
-            $logMessage = $e->getLogMessage();
-            switch ($e->getLogType()) {
-                case 1:
-                    Log::info($logMessage);
-                    break;
-                case 2:
-                    Log::warning($logMessage);
-                    break;
-                case 3:
-                    Log::notice($logMessage);
-                    break;
-                case 4:
-                    Log::error($logMessage);
-                    break;
-            }
+            $this->writeLog($e->getLogType(), $e->getLogMessage());
             $redirectPage = $e->getRedirectPage();
             if ($redirectPage != null && !$isAjaxException) {
                 return $redirectPage;
             }
         } else {
-            Log::error($e->getMessage());
+            $this->writeLog(4, $e->getMessage());
         }
 
         if ($isAjaxException) {
@@ -221,5 +244,27 @@ class ExceptionReportHandler extends Handler
             return response()->json($error, $statusCode);
         }
         return parent::render($request, $e);
+    }
+
+    /**
+     * @param integer $type
+     * @param string $message
+     * @return void
+     */
+    private function writeLog($type, $message){
+        switch ($type) {
+            case 1:
+                Log::info($message);
+                break;
+            case 2:
+                Log::warning($message);
+                break;
+            case 3:
+                Log::notice($message);
+                break;
+            case 4:
+                Log::error($message);
+                break;
+        }
     }
 }

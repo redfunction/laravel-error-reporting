@@ -12,5 +12,12 @@ return array(
     'emailFromName' => env("ERROR_REPORTING_EMAIL_FROM_NAME"),
     'emailRecipients' => explode(';', env("ERROR_REPORTING_EMAIL_RECIPIENTS", "")),
     'emailSubject' => env("ERROR_REPORTING_EMAIL_SUBJECT"),
-    'emailTemplate' => ''
+    'emailTemplate' => '',
+    'customExceptionRender' => [
+        'className' => RedFunction\ErrorReporting\Examples\CustomExceptionRender::class,
+        'usingException' => [
+            RedFunction\ErrorReporting\Examples\ExceptionNotUsingReport::class
+        ]
+    ]
+
 );

@@ -12,6 +12,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Routing\Router;
 use Mockery;
+use RedFunction\ErrorReporting\Examples\ExceptionNotUsingReport;
 use RedFunction\ErrorReporting\Examples\ExceptionUsingReport;
 use RedFunction\ErrorReporting\ExceptionReportHandler;
 
@@ -78,5 +79,24 @@ class ReportingTest extends TestCase {
         $this->assertTrue(file_exists($logFile), 'Log file is missing');
         $logData = file_get_contents($logFile);
         $this->assertTrue(strpos($logData, 'Error 500: reason...') !== false, 'Not wrote to log file. \'Error 500: reason...\'');
+        $generatedString = $this->generateRandomString(200);
+        $this->mockRouter->shouldReceive("dispatch")->once()->andThrow(new ExceptionNotUsingReport($generatedString, 523));
+        $this->call("GET", "/");
+        $this->assertResponseStatus(523);
+        $this->see($generatedString);
+    }
+
+    /**
+     * @param int $length
+     * @return string
+     */
+    private function generateRandomString($length = 10) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
     }
 }
