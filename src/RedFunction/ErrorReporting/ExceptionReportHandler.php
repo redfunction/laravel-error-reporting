@@ -96,10 +96,15 @@ class ExceptionReportHandler extends Handler
             $this->emailRecipients = $config['emailRecipients'];
             $this->emailSubject = $config['emailSubject'];
             $this->emailTemplate = $config['emailTemplate'];
-            $customExceptionRender = $config['customExceptionRender'];
-            if($customExceptionRender != null){
-                $this->customExceptionRenderClass = $customExceptionRender['className'];
-                $this->customExceptionRenderUsing = $customExceptionRender['usingException'];
+            if(isset($config['customExceptionRender'])){
+                $customExceptionRender = $config['customExceptionRender'];
+                if($customExceptionRender != null && isset($customExceptionRender['className']) && isset($customExceptionRender['usingException'])){
+                    $className = $customExceptionRender['className'];
+                    if(trim($className) != ''){
+                        $this->customExceptionRenderClass = $customExceptionRender['className'];
+                        $this->customExceptionRenderUsing = $customExceptionRender['usingException'];
+                    }
+                }
             }
         }
     }
