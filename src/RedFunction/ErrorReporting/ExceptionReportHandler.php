@@ -96,9 +96,9 @@ class ExceptionReportHandler extends Handler
             $this->emailRecipients = $config['emailRecipients'];
             $this->emailSubject = $config['emailSubject'];
             $this->emailTemplate = $config['emailTemplate'];
-            if(isset($config['customExceptionRender'])){
+            if(!empty($config['customExceptionRender'])){
                 $customExceptionRender = $config['customExceptionRender'];
-                if($customExceptionRender != null && isset($customExceptionRender['className']) && isset($customExceptionRender['usingException'])){
+                if(!empty($customExceptionRender['className']) && !empty($customExceptionRender['usingException'])){
                     $className = $customExceptionRender['className'];
                     if(trim($className) != ''){
                         $this->customExceptionRenderClass = $customExceptionRender['className'];
