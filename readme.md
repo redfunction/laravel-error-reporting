@@ -25,7 +25,7 @@ composer update
 ```env
 ERROR_REPORTING_EMAIL_FROM=example@example.com
 ERROR_REPORTING_EMAIL_FROM_NAME="Example name"
-ERROR_REPORTING_EMAIL_RECIPIENTS=example.recipients@example.com
+ERROR_REPORTING_EMAIL_RECIPIENTS="example.recipients@example.com second.recipients@example.com"
 ERROR_REPORTING_EMAIL_SUBJECT="Test %APP_ENVIRONMENT%"
 ```
 
@@ -42,7 +42,7 @@ return array(
     ],
     'emailFrom' => env("ERROR_REPORTING_EMAIL_FROM"),
     'emailFromName' => env("ERROR_REPORTING_EMAIL_FROM_NAME"),
-    'emailRecipients' => explode(';', env("ERROR_REPORTING_EMAIL_RECIPIENTS", "")),
+    'emailRecipients' => preg_split("/\\s+/", env("ERROR_REPORTING_EMAIL_RECIPIENTS", "")),
     'emailSubject' => env("ERROR_REPORTING_EMAIL_SUBJECT"),
     'emailTemplate' => '',
     'customExceptionRender' => null
