@@ -5,12 +5,12 @@ namespace RedFunction\ErrorReporting;
 use Exception;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Foundation\Exceptions\Handler;
-use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\Engines\PhpEngine;
 use RedFunction\ErrorReporting\Interfaces\IOptionReport;
 use RedFunction\ErrorReporting\Interfaces\IReportException;
@@ -237,11 +237,12 @@ class ExceptionReportHandler extends Handler
                 'long_message' => $e->__toString(),
             ];
 
-            if ($e instanceof HttpResponseException) {
+            if ($e instanceof ValidationException) {
                 $response = $e->getResponse();
                 if ($response instanceof JsonResponse) {
                     $data = $response->getData(true);
                     $error['validation_errors'] = $data;
+                    unset($error['long_message']);
                     $statusCode = $response->getStatusCode();
                 }
             }
