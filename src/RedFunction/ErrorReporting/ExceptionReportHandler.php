@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\Engines\PhpEngine;
+use Psr\Log\LoggerInterface;
 use RedFunction\ErrorReporting\Interfaces\IOptionReport;
 use RedFunction\ErrorReporting\Interfaces\IReportException;
 use RedFunction\ErrorReporting\Traits\DoNotReportToEmail;
@@ -30,6 +31,13 @@ class ExceptionReportHandler extends Handler
      * @var array
      */
     protected $dontReport = [];
+
+    /**
+     * A list of ipv4 address that should not be reported.
+     *
+     * @var array
+     */
+    protected $doNotReportIpv4Addresses = [];
 
     /**
      * E-mail from address
@@ -90,7 +98,10 @@ class ExceptionReportHandler extends Handler
         parent::__construct($container);
         $config = config('error.reporting');
         if ($config != null) {
-            $this->dontReport = $config['doNotReport'];
+            if(!empty($config['doNotReportClasses']))
+                $this->dontReport = $config['doNotReportClasses'];
+            if(!empty($config['doNotReportIpv4Addresses']))
+                $this->doNotReportIpv4Addresses = $config['doNotReportIpv4Addresses'];
             $this->emailFrom = $config['emailFrom'];
             $this->emailFromName = $config['emailFromName'];
             $this->emailRecipients = $config['emailRecipients'];
@@ -119,8 +130,26 @@ class ExceptionReportHandler extends Handler
             if ($e instanceof $each)
                 return false;
         }
+        $ipv4Client = $this->getIpv4Address();
+        if($ipv4Client != null)
+        {
+            $ipv4ClientLong = ip2long($ipv4Client);
+            foreach ($this->doNotReportIpv4Addresses as $doNotReportIpv4Address)
+            {
+                $ipPart = explode("/", $doNotReportIpv4Address);
+                if(count($ipPart) == 2)
+                {
+                    $ipLong = ip2long($ipPart[0]);
+                    $ipMask = ~((1 << (32 - $ipPart[1])) - 1);
+                    if($ipLong == ($ipv4ClientLong & $ipMask))
+                        return false;
+                }
+                elseif ($ipv4Client == $doNotReportIpv4Address)
+                    return false;
+            }
+        }
         if (in_array(IOptionReport::class, class_implements($e)))
-            return $e->canReport();
+            return $e->canReportToEmail();
         return !$this->objectHasTrait($e, DoNotReportToEmail::class);
     }
 
@@ -149,13 +178,14 @@ class ExceptionReportHandler extends Handler
      *
      * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
      *
-     * @param  \Exception $e
+     * @param  \Exception|IReportException $e
      *
-     * @return void
+     * @throws Exception
      */
     public function report(Exception $e)
     {
-        if ($this->canReport($e)) {
+        $canReport = $this->canReport($e);
+        if ($canReport) {
             if ($this->emailFrom) {
                 if (App::offsetExists('mailer')) {
                     $emailSubject = $this->emailSubject;
@@ -170,8 +200,54 @@ class ExceptionReportHandler extends Handler
                     );
                 }
             }
-            parent::report($e);
         }
+        if (in_array(IReportException::class, class_implements($e)))
+            $this->writeLog($e->getLogType(), $e->getLogMessage());
+        else if($canReport)
+        {
+            try
+            {
+                /** @var LoggerInterface $logger */
+                $logger = $this->container->make(LoggerInterface::class);
+                $logger->error($e);
+            }
+            catch (Exception $ex) {
+                throw $e;
+            }
+        }
+    }
+
+    /**
+     * @return null|string
+     */
+    private function getIpv4Address()
+    {
+        if (function_exists('apache_request_headers'))
+            $headers = apache_request_headers();
+        else
+            $headers = $_SERVER;
+        //Get the forwarded IP if it exists
+        if (array_key_exists('X-Forwarded-For', $headers) && filter_var(
+                $headers['X-Forwarded-For'],
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_IPV4
+            )
+        ) {
+            return $headers['X-Forwarded-For'];
+        }
+        if (array_key_exists('HTTP_X_FORWARDED_FOR', $headers) && filter_var(
+                $headers['HTTP_X_FORWARDED_FOR'],
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_IPV4
+            )
+        ) {
+            return $headers['X-Forwarded-For'];
+        }
+        if (isset($_SERVER['HTTP_CLIENT_IP']))
+            return $_SERVER['HTTP_CLIENT_IP'];
+        if(!isset($_SERVER['REMOTE_ADDR']))
+            return null;
+        return filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
     }
 
     /**
@@ -213,13 +289,10 @@ class ExceptionReportHandler extends Handler
         }
         $isAjaxException = $request->ajax() || $request->wantsJson();
         if (in_array(IReportException::class, class_implements($e))) {
-            $this->writeLog($e->getLogType(), $e->getLogMessage());
             $redirectPage = $e->getRedirectPage();
             if ($redirectPage != null && !$isAjaxException) {
                 return $redirectPage;
             }
-        } else {
-            $this->writeLog(4, $e->getMessage());
         }
 
         if ($isAjaxException) {

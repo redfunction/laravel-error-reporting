@@ -2,11 +2,14 @@
 
 return array(
 
-    'doNotReport' => [
+    'doNotReportClasses' => [
         Illuminate\Auth\Access\AuthorizationException::class,
         Illuminate\Foundation\Testing\HttpException::class,
         Illuminate\Database\Eloquent\ModelNotFoundException::class,
         Illuminate\Validation\ValidationException::class
+    ],
+    'doNotReportIpv4Addresses' => [
+        '127.0.0.0'
     ],
     'emailFrom' => env("ERROR_REPORTING_EMAIL_FROM"),
     'emailFromName' => env("ERROR_REPORTING_EMAIL_FROM_NAME"),

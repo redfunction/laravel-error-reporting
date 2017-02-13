@@ -12,5 +12,5 @@ interface IOptionReport
     /**
      * @return bool
      */
-    public function canReport();
+    public function canReportToEmail();
 }
