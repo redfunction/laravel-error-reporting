@@ -21,6 +21,6 @@ return array(
         'usingException' => [
             RedFunction\ErrorReporting\Examples\ExceptionNotUsingReport::class
         ]
-    ]
-
+    ],
+    'logStackTrace' => env("ERROR_REPORTING_LOG_STACK_TRACE", false)
 );

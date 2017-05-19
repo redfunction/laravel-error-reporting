@@ -88,6 +88,12 @@ class ExceptionReportHandler extends Handler
      */
     protected $customExceptionRenderUsing = [];
 
+    /**
+     * Write log strace
+     *
+     * @var bool
+     */
+    protected $logStackTrace = true;
 
     /**
      * ExceptionReportHandler constructor.
@@ -107,6 +113,7 @@ class ExceptionReportHandler extends Handler
             $this->emailRecipients = $config['emailRecipients'];
             $this->emailSubject = $config['emailSubject'];
             $this->emailTemplate = $config['emailTemplate'];
+            $this->logStackTrace = $config['logStackTrace'];
             if(!empty($config['customExceptionRender'])){
                 $customExceptionRender = $config['customExceptionRender'];
                 if(!empty($customExceptionRender['className']) && !empty($customExceptionRender['usingException'])){
@@ -209,7 +216,13 @@ class ExceptionReportHandler extends Handler
             {
                 /** @var LoggerInterface $logger */
                 $logger = $this->container->make(LoggerInterface::class);
-                $logger->error($e);
+
+                $exceptionClass = get_class($e);
+                $logContent = "{$exceptionClass}" . (empty(trim($e->getMessage())) ? '' : ": {$e->getMessage()}") . " in {$e->getFile()}:{$e->getLine()}";
+                if ($this->logStackTrace) {
+                    $logContent .= "\nStack trace:\n{$e->getTraceAsString()}";
+                }
+                $logger->error($logContent);
             }
             catch (Exception $ex) {
                 throw $e;
