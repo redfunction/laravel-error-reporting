@@ -96,6 +96,13 @@ class ExceptionReportHandler extends Handler
     protected $logStackTrace = true;
 
     /**
+     * JSON response long message
+     *
+     * @var bool
+     */
+    protected $jsonResponseLongMessage = true;
+
+    /**
      * ExceptionReportHandler constructor.
      * @param Container $container
      */
@@ -114,6 +121,7 @@ class ExceptionReportHandler extends Handler
             $this->emailSubject = $config['emailSubject'];
             $this->emailTemplate = $config['emailTemplate'];
             $this->logStackTrace = $config['logStackTrace'];
+            $this->jsonResponseLongMessage = $config['jsonResponseLongMessage'];
             if(!empty($config['customExceptionRender'])){
                 $customExceptionRender = $config['customExceptionRender'];
                 if(!empty($customExceptionRender['className']) && !empty($customExceptionRender['usingException'])){
@@ -322,13 +330,18 @@ class ExceptionReportHandler extends Handler
                 'error_class_name' => get_class($e),
                 'long_message' => $e->__toString(),
             ];
+            if ($this->jsonResponseLongMessage) {
+                $error['long_message'] = $e->__toString();
+            }
 
             if ($e instanceof ValidationException) {
                 $response = $e->getResponse();
                 if ($response instanceof JsonResponse) {
                     $data = $response->getData(true);
                     $error['validation_errors'] = $data;
-                    unset($error['long_message']);
+                    if ($this->jsonResponseLongMessage) {
+                        unset($error['long_message']);
+                    }
                     $statusCode = $response->getStatusCode();
                 }
             }
