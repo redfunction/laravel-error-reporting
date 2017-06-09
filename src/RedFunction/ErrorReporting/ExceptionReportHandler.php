@@ -328,7 +328,6 @@ class ExceptionReportHandler extends Handler
                 'error_code' => $e->getCode(),
                 'error_message' => $e->getMessage(),
                 'error_class_name' => get_class($e),
-                'long_message' => $e->__toString(),
             ];
             if ($this->jsonResponseLongMessage) {
                 $error['long_message'] = $e->__toString();
