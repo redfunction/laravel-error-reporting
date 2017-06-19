@@ -51,7 +51,15 @@ return array(
     'emailSubject' => env("ERROR_REPORTING_EMAIL_SUBJECT"),
     'emailTemplate' => '',
     'customExceptionRender' => null,
-    'logStackTrace' => env("ERROR_REPORTING_LOG_STACK_TRACE", false)
+    'logStackTrace' => env("ERROR_REPORTING_LOG_STACK_TRACE", false),
+    'encryptionAlgorithm' => 'md5',
+    'encryptionFields' => [
+        'HTTP_AUTHORIZATION',
+        [
+            'regexPattern' => 'PASSWORD$',
+            'useUpperCase'
+        ]
+    ]
 );
 
 ```

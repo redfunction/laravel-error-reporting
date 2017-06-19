@@ -22,5 +22,13 @@ return array(
             RedFunction\ErrorReporting\Examples\ExceptionNotUsingReport::class
         ]
     ],
-    'logStackTrace' => env("ERROR_REPORTING_LOG_STACK_TRACE", false)
+    'logStackTrace' => env("ERROR_REPORTING_LOG_STACK_TRACE", false),
+    'encryptionAlgorithm' => 'md5',
+    'encryptionFields' => [
+        'HTTP_AUTHORIZATION',
+        [
+            'regexPattern' => 'PASSWORD$',
+            'useUpperCase'
+        ]
+    ]
 );

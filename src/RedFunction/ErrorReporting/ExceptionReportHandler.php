@@ -96,6 +96,22 @@ class ExceptionReportHandler extends Handler
     protected $logStackTrace = true;
 
     /**
+     * Encryption algorithm
+     *
+     * @var string|null
+     *
+     */
+    protected $encryptionAlgorithm = null;
+
+    /**
+     * Encryption field list
+     *
+     * @var array
+     *
+     */
+    protected $encryptionFields = array();
+
+    /**
      * ExceptionReportHandler constructor.
      * @param Container $container
      */
@@ -113,7 +129,12 @@ class ExceptionReportHandler extends Handler
             $this->emailRecipients = $config['emailRecipients'];
             $this->emailSubject = $config['emailSubject'];
             $this->emailTemplate = $config['emailTemplate'];
-            $this->logStackTrace = $config['logStackTrace'];
+            if (!empty($config['logStackTrace']))
+                $this->logStackTrace = $config['logStackTrace'];
+            if (!empty($config['encryptionAlgorithm']))
+                $this->encryptionAlgorithm = $config['encryptionAlgorithm'];
+            if (!empty($config['encryptionFields']))
+                $this->encryptionFields = $config['encryptionFields'];
             if(!empty($config['customExceptionRender'])){
                 $customExceptionRender = $config['customExceptionRender'];
                 if(!empty($customExceptionRender['className']) && !empty($customExceptionRender['usingException'])){
@@ -230,6 +251,44 @@ class ExceptionReportHandler extends Handler
         }
     }
 
+    private function encryptArray($array)
+    {
+        if (empty($this->encryptionAlgorithm))
+            return $array;
+        $encryptedArray = $array;
+        foreach ($encryptedArray as $field => $value) {
+            if ($this->canEncrypt($field)) {
+                $encryptedArray[$field] = hash($this->encryptionAlgorithm, $value);
+            }
+        }
+        return $encryptedArray;
+    }
+
+    private function canEncrypt($fieldName)
+    {
+        foreach ($this->encryptionFields as $encryptionField) {
+            if (is_array($encryptionField)) {
+                $fieldTemp = $fieldName;
+                if (array_key_exists('useUpperCase', $encryptionField)) {
+                    $fieldTemp = mb_strtoupper($fieldTemp);
+                }
+                if (array_key_exists('regexPattern', $encryptionField)) {
+                    if (preg_match("/{$encryptionField['regexPattern']}/", $fieldTemp)) {
+                        return true;
+                    }
+                }
+                if (array_key_exists('name', $encryptionField)) {
+                    if ($fieldTemp == $encryptionField['name']) {
+                        return true;
+                    }
+                }
+            } elseif ($fieldName == $encryptionField) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * @return null|string
      */
@@ -271,7 +330,15 @@ class ExceptionReportHandler extends Handler
      */
     private function reportRenderHtml(Exception $e, $request, $server)
     {
-        $data = ['error' => $e, 'request' => $request, 'server' => $server];
+        $data = [
+            'error' => $e,
+            'request' => $request,
+            'server' => $server,
+            'encryptedData' => [
+                'request' => $this->encryptArray($request),
+                'server' => $this->encryptArray($server),
+            ]
+        ];
         if ($this->emailTemplate == '') {
             $phpEngine = new PhpEngine();
             return $phpEngine->get(__DIR__ . '/../../../resources/views/emails/exception.blade.php', $data);
@@ -285,7 +352,7 @@ class ExceptionReportHandler extends Handler
      * @param  \Illuminate\Http\Request $request
      * @param  \Exception|IReportException|Exception $e
      *
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\Response
      */
     public function render($request, Exception $e)
     {

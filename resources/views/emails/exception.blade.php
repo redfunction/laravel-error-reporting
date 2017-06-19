@@ -22,7 +22,7 @@
             <?php foreach ($request as $key => $value): ?>
             <tr>
                 <th><?= $key ?></th>
-                <td><?php var_dump($value); ?></td>
+                <td><?php if (array_key_exists('request', $encryptedData) && array_key_exists($key, $encryptedData['request'])) echo "<i>{$encryptedData['request'][$key]} (length " . strlen($value) . " characters)</i>"; else var_dump($value); ?></td>
             </tr>
             <?php endforeach; ?>
         </table>
@@ -32,13 +32,7 @@
             <?php foreach ($server as $key => $value): ?>
             <tr>
                 <th><?= $key ?></th>
-                <td><?php
-                    if (stripos($key, "password") || stripos($key, "key")) {
-                        print '<i>' . sha1($value) . ' (length ' . strlen($value) . ' characters)</i>';
-                    } else {
-                        var_dump($value);
-                    }
-                    ?></td>
+                <td><?php if (array_key_exists('server', $encryptedData) && array_key_exists($key, $encryptedData['server'])) echo "<i>{$encryptedData['server'][$key]} (length " . strlen($value) . " characters)</i>"; else var_dump($value); ?></td>
             </tr>
             <?php endforeach; ?>
         </table>
