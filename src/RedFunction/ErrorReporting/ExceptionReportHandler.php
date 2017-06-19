@@ -261,9 +261,9 @@ class ExceptionReportHandler extends Handler
     private function encryptArray($array)
     {
         if (empty($this->encryptionAlgorithm))
-            return $array;
-        $encryptedArray = $array;
-        foreach ($encryptedArray as $field => $value) {
+            return [];
+        $encryptedArray = [];
+        foreach ($array as $field => $value) {
             if ($this->canEncrypt($field)) {
                 $encryptedArray[$field] = hash($this->encryptionAlgorithm, $value);
             }
