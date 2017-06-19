@@ -23,6 +23,7 @@ return array(
         ]
     ],
     'logStackTrace' => env("ERROR_REPORTING_LOG_STACK_TRACE", false),
+    'jsonResponseLongMessage' => env("ERROR_REPORTING_JSON_RESPONSE_LONG_MESSAGE", false),
     'encryptionAlgorithm' => 'md5',
     'encryptionFields' => [
         'HTTP_AUTHORIZATION',

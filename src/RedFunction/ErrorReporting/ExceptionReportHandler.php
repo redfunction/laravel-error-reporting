@@ -96,6 +96,13 @@ class ExceptionReportHandler extends Handler
     protected $logStackTrace = true;
 
     /**
+     * JSON response long message
+     *
+     * @var bool
+     */
+    protected $jsonResponseLongMessage = true;
+
+    /**
      * Encryption algorithm
      *
      * @var string|null
@@ -387,15 +394,19 @@ class ExceptionReportHandler extends Handler
                 'error_code' => $e->getCode(),
                 'error_message' => $e->getMessage(),
                 'error_class_name' => get_class($e),
-                'long_message' => $e->__toString(),
             ];
+            if ($this->jsonResponseLongMessage) {
+                $error['long_message'] = $e->__toString();
+            }
 
             if ($e instanceof ValidationException) {
                 $response = $e->getResponse();
                 if ($response instanceof JsonResponse) {
                     $data = $response->getData(true);
                     $error['validation_errors'] = $data;
-                    unset($error['long_message']);
+                    if ($this->jsonResponseLongMessage) {
+                        unset($error['long_message']);
+                    }
                     $statusCode = $response->getStatusCode();
                 }
             }

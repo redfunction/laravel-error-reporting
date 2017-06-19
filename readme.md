@@ -28,6 +28,7 @@ ERROR_REPORTING_EMAIL_FROM_NAME="Example name"
 ERROR_REPORTING_EMAIL_RECIPIENTS="example.recipients@example.com second.recipients@example.com"
 ERROR_REPORTING_EMAIL_SUBJECT="Test %APP_ENVIRONMENT%"
 ERROR_REPORTING_LOG_STACK_TRACE=true
+ERROR_REPORTING_JSON_RESPONSE_LONG_MESSAGE=true
 ```
 
 ### config/error.reporting.php
@@ -52,6 +53,7 @@ return array(
     'emailTemplate' => '',
     'customExceptionRender' => null,
     'logStackTrace' => env("ERROR_REPORTING_LOG_STACK_TRACE", false),
+    'jsonResponseLongMessage' => env("ERROR_REPORTING_JSON_RESPONSE_LONG_MESSAGE", false),
     'encryptionAlgorithm' => 'md5',
     'encryptionFields' => [
         'HTTP_AUTHORIZATION',
