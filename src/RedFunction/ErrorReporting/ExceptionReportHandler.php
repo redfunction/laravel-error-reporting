@@ -131,11 +131,16 @@ class ExceptionReportHandler extends Handler
                 $this->dontReport = $config['doNotReportClasses'];
             if(!empty($config['doNotReportIpv4Addresses']))
                 $this->doNotReportIpv4Addresses = $config['doNotReportIpv4Addresses'];
-            $this->emailFrom = $config['emailFrom'];
-            $this->emailFromName = $config['emailFromName'];
-            $this->emailRecipients = $config['emailRecipients'];
-            $this->emailSubject = $config['emailSubject'];
-            $this->emailTemplate = $config['emailTemplate'];
+            if(!empty($config['emailFrom']))
+                $this->emailFrom = $config['emailFrom'];
+            if(!empty($config['emailFromName']))
+                $this->emailFromName = $config['emailFromName'];
+            if(!empty($config['emailRecipients']))
+                $this->emailRecipients = $config['emailRecipients'];
+            if(!empty($config['emailSubject']))
+                $this->emailSubject = $config['emailSubject'];
+            if(!empty($config['emailTemplate']))
+                $this->emailTemplate = $config['emailTemplate'];
             if (!empty($config['logStackTrace']))
                 $this->logStackTrace = $config['logStackTrace'];
             if (!empty($config['encryptionAlgorithm']))
@@ -221,7 +226,7 @@ class ExceptionReportHandler extends Handler
     {
         $canReport = $this->canReport($e);
         if ($canReport) {
-            if ($this->emailFrom) {
+            if ($this->emailFrom && $this->emailFromName && !empty($this->emailSubject) && !empty($this->emailRecipients)) {
                 if (App::offsetExists('mailer')) {
                     $emailSubject = $this->emailSubject;
                     $emailSubject = str_replace("%APP_ENVIRONMENT%", App::environment(), $emailSubject);
