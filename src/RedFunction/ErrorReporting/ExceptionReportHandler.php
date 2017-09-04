@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\Engines\PhpEngine;
 use Psr\Log\LoggerInterface;
+use RedFunction\ErrorReporting\Interfaces\CustomJsonResponse;
 use RedFunction\ErrorReporting\Interfaces\IOptionReport;
 use RedFunction\ErrorReporting\Interfaces\IReportException;
 use RedFunction\ErrorReporting\Traits\DoNotReportToEmail;
@@ -363,7 +364,7 @@ class ExceptionReportHandler extends Handler
      * Render an exception into an HTTP response.
      *
      * @param  \Illuminate\Http\Request $request
-     * @param  \Exception|IReportException|Exception $e
+     * @param  \Exception|IReportException|CustomJsonResponse|Exception $e
      *
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\Response
      */
@@ -417,7 +418,11 @@ class ExceptionReportHandler extends Handler
                 }
             }
             $error['http_status_code'] = $statusCode;
-            return response()->json($error, $statusCode);
+            $responseData = $error;
+            if (in_array(CustomJsonResponse::class, class_implements($e))) {
+                $responseData = $e->customJsonResponse($responseData);
+            }
+            return response()->json($responseData, $statusCode);
         }
         return parent::render($request, $e);
     }
