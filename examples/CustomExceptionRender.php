@@ -1,5 +1,7 @@
 <?php
+
 namespace RedFunction\ErrorReporting\Examples;
+
 use Exception;
 use Illuminate\Http\Response;
 use RedFunction\ErrorReporting\AbstractCustomExceptionRender;
@@ -18,13 +20,16 @@ class CustomExceptionRender extends AbstractCustomExceptionRender
      * @param  Exception $e
      *
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     * @throws \InvalidArgumentException
      */
     public function render($request, $e)
     {
         if ($e instanceof Exception) {
             $this->log(self::LOG_NOTICE, $e->getMessage());
+
             return new Response($e->getMessage(), $e->getCode());
         }
+
         return null;
     }
 
@@ -33,5 +38,6 @@ class CustomExceptionRender extends AbstractCustomExceptionRender
      */
     public function __construct()
     {
+
     }
 }

@@ -27,60 +27,39 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 class ExceptionReportHandler extends Handler
 {
     /**
-     * A list of the exception types that should not be reported.
-     *
-     * @var array
-     */
-    protected $dontReport = [];
-
-    /**
-     * A list of ipv4 address that should not be reported.
-     *
      * @var array
      */
     protected $doNotReportIpv4Addresses = [];
 
     /**
-     * E-mail from address
-     *
      * @var string
      */
     protected $emailFrom;
 
     /**
-     * E-mail from name
-     *
      * @var string
      */
     protected $emailFromName;
 
     /**
-     * E-mail Recipients
-     *
      * @var array(string)
      */
     protected $emailRecipients;
 
     /**
-     * E-mail subject
-     *
      * @var string
      */
     protected $emailSubject;
 
     /**
-     * E-mail template
-     *
      * @var string
      */
     protected $emailTemplate;
 
     /**
-     * Custom exception render class
-     *
      * @var string|null
      */
-    protected $customExceptionRenderClass = null;
+    protected $customExceptionRenderClass;
 
     /**
      * Custom exception render class
@@ -90,32 +69,22 @@ class ExceptionReportHandler extends Handler
     protected $customExceptionRenderUsing = [];
 
     /**
-     * Write log strace
-     *
      * @var bool
      */
     protected $logStackTrace = true;
 
     /**
-     * JSON response long message
-     *
      * @var bool
      */
     protected $jsonResponseLongMessage = true;
 
     /**
-     * Encryption algorithm
-     *
      * @var string|null
-     *
      */
-    protected $encryptionAlgorithm = null;
+    protected $encryptionAlgorithm;
 
     /**
-     * Encryption field list
-     *
      * @var array
-     *
      */
     protected $encryptionFields = array();
 
@@ -126,16 +95,20 @@ class ExceptionReportHandler extends Handler
     public function __construct(Container $container)
     {
         parent::__construct($container);
-        $config = config('error.reporting');
-        if ($config != null) {
-            if (!empty($config['doNotReportClasses']))
+        $config = config('laravel-error-reporting');
+        if (!empty($config)) {
+            if (!empty($config['doNotReportClasses'])) {
                 $this->dontReport = $config['doNotReportClasses'];
-            if (!empty($config['doNotReportIpv4Addresses']))
+            }
+            if (!empty($config['doNotReportIpv4Addresses'])) {
                 $this->doNotReportIpv4Addresses = $config['doNotReportIpv4Addresses'];
-            if (!empty($config['emailFrom']))
+            }
+            if (!empty($config['emailFrom'])) {
                 $this->emailFrom = $config['emailFrom'];
-            if (!empty($config['emailFromName']))
+            }
+            if (!empty($config['emailFromName'])) {
                 $this->emailFromName = $config['emailFromName'];
+            }
             if (!empty($config['emailRecipients'])) {
                 $this->emailRecipients = [];
                 foreach ($config['emailRecipients'] as $emailRecipient) {
@@ -144,21 +117,26 @@ class ExceptionReportHandler extends Handler
                     }
                 }
             }
-            if (!empty($config['emailSubject']))
+            if (!empty($config['emailSubject'])) {
                 $this->emailSubject = $config['emailSubject'];
-            if (!empty($config['emailTemplate']))
+            }
+            if (!empty($config['emailTemplate'])) {
                 $this->emailTemplate = $config['emailTemplate'];
-            if (!empty($config['logStackTrace']))
+            }
+            if (!empty($config['logStackTrace'])) {
                 $this->logStackTrace = $config['logStackTrace'];
-            if (!empty($config['encryptionAlgorithm']))
+            }
+            if (!empty($config['encryptionAlgorithm'])) {
                 $this->encryptionAlgorithm = $config['encryptionAlgorithm'];
-            if (!empty($config['encryptionFields']))
+            }
+            if (!empty($config['encryptionFields'])) {
                 $this->encryptionFields = $config['encryptionFields'];
+            }
             if (!empty($config['customExceptionRender'])) {
                 $customExceptionRender = $config['customExceptionRender'];
                 if (!empty($customExceptionRender['className']) && !empty($customExceptionRender['usingException'])) {
                     $className = $customExceptionRender['className'];
-                    if (trim($className) != '') {
+                    if (trim($className) !== '') {
                         $this->customExceptionRenderClass = $customExceptionRender['className'];
                         $this->customExceptionRenderUsing = $customExceptionRender['usingException'];
                     }
@@ -171,28 +149,33 @@ class ExceptionReportHandler extends Handler
      * @param \Exception|IOptionReport|Exception $e
      * @return bool
      */
-    private function canReport(Exception $e)
+    private function canReport(Exception $e): bool
     {
         foreach ($this->dontReport as $each) {
-            if ($e instanceof $each)
+            if ($e instanceof $each) {
                 return false;
-        }
-        $ipv4Client = $this->getIpv4Address();
-        if ($ipv4Client != null) {
-            $ipv4ClientLong = ip2long($ipv4Client);
-            foreach ($this->doNotReportIpv4Addresses as $doNotReportIpv4Address) {
-                $ipPart = explode("/", $doNotReportIpv4Address);
-                if (count($ipPart) == 2) {
-                    $ipLong = ip2long($ipPart[0]);
-                    $ipMask = ~((1 << (32 - $ipPart[1])) - 1);
-                    if ($ipLong == ($ipv4ClientLong & $ipMask))
-                        return false;
-                } elseif ($ipv4Client == $doNotReportIpv4Address)
-                    return false;
             }
         }
-        if (in_array(IOptionReport::class, class_implements($e)))
+        $ipv4Client = $this->getIpv4Address();
+        if ($ipv4Client !== null) {
+            $ipv4ClientLong = ip2long($ipv4Client);
+            foreach ($this->doNotReportIpv4Addresses as $doNotReportIpv4Address) {
+                $ipPart = explode('/', $doNotReportIpv4Address);
+                if (\count($ipPart) === 2) {
+                    $ipLong = ip2long($ipPart[0]);
+                    $ipMask = ~((1 << (32 - $ipPart[1])) - 1);
+                    if ($ipLong === ($ipv4ClientLong & $ipMask)) {
+                        return false;
+                    }
+                } elseif ($ipv4Client === $doNotReportIpv4Address) {
+                    return false;
+                }
+            }
+        }
+        if (\in_array(IOptionReport::class, class_implements($e), true)) {
             return $e->canReportToEmail();
+        }
+
         return !$this->objectHasTrait($e, DoNotReportToEmail::class);
     }
 
@@ -202,7 +185,7 @@ class ExceptionReportHandler extends Handler
      * @param mixed $trait
      * @return bool
      */
-    private function objectHasTrait($obj, $trait)
+    private function objectHasTrait($obj, $trait): bool
     {
         //check arguments
         $used = class_uses($obj);
@@ -213,7 +196,8 @@ class ExceptionReportHandler extends Handler
                 $used = class_uses(array_pop($parents));
             }
         }
-        return isset($used[$trait]);//return bool
+
+        return isset($used[$trait]);
     }
 
     /**
@@ -223,38 +207,34 @@ class ExceptionReportHandler extends Handler
      *
      * @param  \Exception|IReportException $e
      *
-     * @throws Exception
+     * @throws IReportException
      */
     public function report(Exception $e)
     {
         $canReport = $this->canReport($e);
-        if ($canReport) {
-            if (!empty($this->emailFrom) && !empty($this->emailFromName)
-                && !empty($this->emailSubject) && !empty($this->emailRecipients)
-            ) {
-                if (App::offsetExists('mailer')) {
-                    $emailSubject = $this->emailSubject;
-                    $emailSubject = str_replace("%APP_ENVIRONMENT%", App::environment(), $emailSubject);
-                    // in case we have xdebug, we don't want it to override var_dump any longer
-                    ini_set('xdebug.overload_var_dump', 0);
-                    Mail::raw('', function ($message) use ($e, $emailSubject) {
-                        $message->from($this->emailFrom, $this->emailFromName);
-                        $message->setBody($this->reportRenderHtml($e, $_REQUEST, $_SERVER), 'text/html');
-                        $message->to($this->emailRecipients)->subject($emailSubject);
-                    }
-                    );
-                }
+        if ($canReport && !empty($this->emailFrom) && !empty($this->emailFromName) && !empty($this->emailSubject)
+            && !empty($this->emailRecipients) && App::offsetExists('mailer')) {
+            $emailSubject = $this->emailSubject;
+            $emailSubject = str_replace('%APP_ENVIRONMENT%', App::environment(), $emailSubject);
+            // in case we have xdebug, we don't want it to override var_dump any longer
+            ini_set('xdebug.overload_var_dump', 0);
+            Mail::raw('', function ($message) use ($e, $emailSubject) {
+                $message->from($this->emailFrom, $this->emailFromName);
+                $message->setBody($this->reportRenderHtml($e, $_REQUEST, $_SERVER), 'text/html');
+                $message->to($this->emailRecipients)->subject($emailSubject);
             }
+            );
         }
-        if (in_array(IReportException::class, class_implements($e)))
+        if (\in_array(IReportException::class, class_implements($e), true)) {
             $this->writeLog($e->getLogType(), $e->getLogMessage());
-        else if ($canReport) {
+        } else if ($canReport) {
             try {
                 /** @var LoggerInterface $logger */
                 $logger = $this->container->make(LoggerInterface::class);
-
-                $exceptionClass = get_class($e);
-                $logContent = "{$exceptionClass}" . (empty(trim($e->getMessage())) ? '' : ": {$e->getMessage()}") . " in {$e->getFile()}:{$e->getLine()}";
+                $exceptionClass = \get_class($e);
+                $logContent = $exceptionClass . (empty(trim($e->getMessage()))
+                        ? ''
+                        : ": {$e->getMessage()}") . " in {$e->getFile()}:{$e->getLine()}";
                 if ($this->logStackTrace) {
                     $logContent .= "\nStack trace:\n{$e->getTraceAsString()}";
                 }
@@ -265,41 +245,49 @@ class ExceptionReportHandler extends Handler
         }
     }
 
-    private function encryptArray($array)
+    /**
+     * @param $array
+     * @return array
+     */
+    private function encryptArray($array): array
     {
-        if (empty($this->encryptionAlgorithm))
+        if (empty($this->encryptionAlgorithm)) {
             return [];
+        }
         $encryptedArray = [];
         foreach ($array as $field => $value) {
             if ($this->canEncrypt($field)) {
                 $encryptedArray[$field] = hash($this->encryptionAlgorithm, $value);
             }
         }
+
         return $encryptedArray;
     }
 
-    private function canEncrypt($fieldName)
+    /**
+     * @param strong $fieldName
+     * @return bool
+     */
+    private function canEncrypt($fieldName): bool
     {
         foreach ($this->encryptionFields as $encryptionField) {
-            if (is_array($encryptionField)) {
+            if (\is_array($encryptionField)) {
                 $fieldTemp = $fieldName;
                 if (array_key_exists('useUpperCase', $encryptionField)) {
                     $fieldTemp = mb_strtoupper($fieldTemp);
                 }
-                if (array_key_exists('regexPattern', $encryptionField)) {
-                    if (preg_match("/{$encryptionField['regexPattern']}/", $fieldTemp)) {
-                        return true;
-                    }
+                if (array_key_exists('regexPattern', $encryptionField)
+                    && preg_match("/{$encryptionField['regexPattern']}/", $fieldTemp)) {
+                    return true;
                 }
-                if (array_key_exists('name', $encryptionField)) {
-                    if ($fieldTemp == $encryptionField['name']) {
-                        return true;
-                    }
+                if (array_key_exists('name', $encryptionField) && $fieldTemp === $encryptionField['name']) {
+                    return true;
                 }
-            } elseif ($fieldName == $encryptionField) {
+            } elseif ($fieldName === $encryptionField) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -308,11 +296,12 @@ class ExceptionReportHandler extends Handler
      */
     private function getIpv4Address()
     {
-        if (function_exists('apache_request_headers'))
+        if (\function_exists('apache_request_headers')) {
             $headers = apache_request_headers();
-        else
+        } else {
             $headers = $_SERVER;
-        //Get the forwarded IP if it exists
+        }
+        # Get the forwarded IP address if it exists
         if (array_key_exists('X-Forwarded-For', $headers) && filter_var(
                 $headers['X-Forwarded-For'],
                 FILTER_VALIDATE_IP,
@@ -329,10 +318,13 @@ class ExceptionReportHandler extends Handler
         ) {
             return $headers['X-Forwarded-For'];
         }
-        if (isset($_SERVER['HTTP_CLIENT_IP']))
+        if (isset($_SERVER['HTTP_CLIENT_IP'])) {
             return $_SERVER['HTTP_CLIENT_IP'];
-        if (!isset($_SERVER['REMOTE_ADDR']))
+        }
+        if (!isset($_SERVER['REMOTE_ADDR'])) {
             return null;
+        }
+
         return filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
     }
 
@@ -342,7 +334,7 @@ class ExceptionReportHandler extends Handler
      * @param array $server
      * @return string
      */
-    private function reportRenderHtml(Exception $e, $request, $server)
+    private function reportRenderHtml(Exception $e, $request, $server): string
     {
         $data = [
             'error' => $e,
@@ -353,10 +345,11 @@ class ExceptionReportHandler extends Handler
                 'server' => $this->encryptArray($server),
             ]
         ];
-        if ($this->emailTemplate == '') {
+        if ($this->emailTemplate === '') {
             $phpEngine = new PhpEngine();
             return $phpEngine->get(__DIR__ . '/../../../resources/views/emails/exception.blade.php', $data);
         }
+
         return View::make($this->emailTemplate, $data)->render();
     }
 
@@ -370,21 +363,23 @@ class ExceptionReportHandler extends Handler
      */
     public function render($request, Exception $e)
     {
-        if ($this->customExceptionRenderClass != null) {
+        if ($this->customExceptionRenderClass !== null) {
             foreach ($this->customExceptionRenderUsing as $exceptionClass) {
                 if ($e instanceof $exceptionClass) {
                     /** @var AbstractCustomExceptionRender $customExceptionRender */
                     $customExceptionRender = new $this->customExceptionRenderClass;
                     $redirect = $customExceptionRender->render($request, $e);
                     $this->writeLog($customExceptionRender->getLogType(), $customExceptionRender->getLogMessage());
-                    if ($redirect != null) return $redirect;
+                    if ($redirect !== null) {
+                        return $redirect;
+                    }
                 }
             }
         }
         $isAjaxException = $request->ajax() || $request->wantsJson();
-        if (in_array(IReportException::class, class_implements($e))) {
+        if (\in_array(IReportException::class, class_implements($e), true)) {
             $redirectPage = $e->getRedirectPage();
-            if ($redirectPage != null && !$isAjaxException) {
+            if ($redirectPage !== null && !$isAjaxException) {
                 return $redirectPage;
             }
         }
@@ -394,18 +389,16 @@ class ExceptionReportHandler extends Handler
             if ($e instanceof HttpExceptionInterface) {
                 $statusCode = $e->getStatusCode();
             }
-
             $error = [
                 'status' => false,
                 'http_status_code' => $statusCode,
                 'error_code' => $e->getCode(),
                 'error_message' => $e->getMessage(),
-                'error_class_name' => get_class($e),
+                'error_class_name' => \get_class($e),
             ];
             if ($this->jsonResponseLongMessage) {
                 $error['long_message'] = $e->__toString();
             }
-
             if ($e instanceof ValidationException) {
                 $response = $e->getResponse();
                 if ($response instanceof JsonResponse) {
@@ -419,11 +412,13 @@ class ExceptionReportHandler extends Handler
             }
             $error['http_status_code'] = $statusCode;
             $responseData = $error;
-            if (in_array(CustomJsonResponse::class, class_implements($e))) {
+            if (\in_array(CustomJsonResponse::class, class_implements($e), true)) {
                 $responseData = $e->customJsonResponse($responseData);
             }
+
             return response()->json($responseData, $statusCode);
         }
+
         return parent::render($request, $e);
     }
 

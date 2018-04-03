@@ -3,7 +3,7 @@
 namespace RedFunction\ErrorReporting\Traits;
 
 /**
- * Trait HasMemory
+ * Trait DoNotReportToEmail
  *
  * @package ErrorReporting\Exceptions\Traits
  */

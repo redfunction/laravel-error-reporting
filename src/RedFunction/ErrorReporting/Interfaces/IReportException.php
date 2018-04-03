@@ -2,8 +2,10 @@
 
 namespace RedFunction\ErrorReporting\Interfaces;
 
+use Illuminate\Http\RedirectResponse;
+
 /**
- * Interface IRaportException
+ * Interface IReportException
  *
  * @package RedFunction\ErrorReporting\Interfaces
  */
@@ -12,19 +14,20 @@ interface IReportException
     /**
      * @return string
      */
-    public function getLogMessage();
+    public function getLogMessage(): string;
 
     /**
      * 1 - INFO
      * 2 - WARNING
      * 3 - NOTICE
      * 4 - ERROR
+     *
      * @return integer
      */
-    public function getLogType();
+    public function getLogType(): int;
 
     /**
-     * @return \Illuminate\Routing\Redirector|\Illuminate\Http\RedirectResponse|null
+     * @return \Illuminate\Routing\Redirector|RedirectResponse|null
      */
     public function getRedirectPage();
 }

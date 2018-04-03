@@ -1,39 +1,35 @@
 <?php
+
 namespace RedFunction\ErrorReporting\Examples;
 
 use Exception;
+use Illuminate\Http\RedirectResponse;
 use RedFunction\ErrorReporting\Interfaces\IReportException;
 
 
 /**
  * Class ExceptionUsingReport
- *
  */
 class ExceptionUsingReport extends Exception implements IReportException
 {
-
     /**
-     * @return string
+     * @inheritdoc
      */
-    public function getLogMessage()
+    public function getLogMessage(): string
     {
-        return "Error 500: reason...";
+        return 'Error 500: reason...';
     }
 
     /**
-     * 1 - INFO
-     * 2 - WARNING
-     * 3 - NOTICE
-     * 4 - ERROR
-     * @return integer
+     * @inheritdoc
      */
-    public function getLogType()
+    public function getLogType(): int
     {
         return 4;
     }
 
     /**
-     * @return \Illuminate\Routing\Redirector|\Illuminate\Http\RedirectResponse|null
+     * @inheritdoc
      */
     public function getRedirectPage()
     {
