@@ -13,5 +13,5 @@ interface CustomJsonResponse
      * @param array $data
      * @return array
      */
-    public function customJsonResponse($data);
+    public function customJsonResponse($data): array;
 }

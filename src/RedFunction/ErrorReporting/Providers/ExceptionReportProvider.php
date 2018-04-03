@@ -1,4 +1,5 @@
 <?php
+
 namespace RedFunction\ErrorReporting\Providers;
 
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -13,13 +14,6 @@ use RedFunction\ErrorReporting\ExceptionReportHandler;
 class ExceptionReportProvider extends ServiceProvider
 {
     /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = false;
-
-    /**
      * Package boot method
      */
     public function boot()
@@ -28,7 +22,7 @@ class ExceptionReportProvider extends ServiceProvider
     }
 
     /**
-     * Register the service provider.
+     * Register the service provider
      *
      * @return void
      */

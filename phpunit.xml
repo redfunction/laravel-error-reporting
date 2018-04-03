@@ -7,9 +7,9 @@
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
          processIsolation="false"
-         stopOnFailure="false">
+         stopOnFailure="true">
     <testsuites>
-        <testsuite name="Application Test Suite">
+        <testsuite name="Red Function Laravel error reporting package test suite">
             <directory suffix="Test.php">./tests</directory>
         </testsuite>
     </testsuites>

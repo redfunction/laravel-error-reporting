@@ -1,4 +1,5 @@
 <?php
+
 namespace RedFunction\ErrorReporting\Examples;
 
 use Exception;
@@ -8,34 +9,29 @@ use RedFunction\ErrorReporting\Traits\DoNotReportToEmail;
 
 /**
  * Class ExceptionNotUsingReport
- *
  */
 class ExceptionNotUsingReport extends Exception implements IReportException
 {
     use DoNotReportToEmail;
 
     /**
-     * @return string
+     * @inheritdoc
      */
-    public function getLogMessage()
+    public function getLogMessage(): string
     {
-        return "Error 500: reason...";
+        return $this->getMessage();
     }
 
     /**
-     * 1 - INFO
-     * 2 - WARNING
-     * 3 - NOTICE
-     * 4 - ERROR
-     * @return integer
+     * @inheritdoc
      */
-    public function getLogType()
+    public function getLogType(): int
     {
         return 4;
     }
 
     /**
-     * @return \Illuminate\Routing\Redirector|\Illuminate\Http\RedirectResponse|null
+     * @inheritdoc
      */
     public function getRedirectPage()
     {
