@@ -400,14 +400,9 @@ class ExceptionReportHandler extends Handler
                 $error['long_message'] = $e->__toString();
             }
             if ($e instanceof ValidationException) {
-                $response = $e->getResponse();
-                if ($response instanceof JsonResponse) {
-                    $data = $response->getData(true);
-                    $error['validation_errors'] = $data;
-                    if ($this->jsonResponseLongMessage) {
-                        unset($error['long_message']);
-                    }
-                    $statusCode = $response->getStatusCode();
+                $error['validation_errors'] = $e->errors();
+                if ($this->jsonResponseLongMessage) {
+                    unset($error['long_message']);
                 }
             }
             $error['http_status_code'] = $statusCode;
